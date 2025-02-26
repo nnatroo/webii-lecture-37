@@ -167,6 +167,36 @@ app.get('/api/sessions', async (req, res) => {
   run().catch(console.dir);
 });
 
+app.patch('/api/users/changePassword', async (req, res) => {
+  async function run() {
+    try {
+      const database = await connectToDatabase();
+      const users = database.collection('users');
+      const filter = { email: req.body.email, password: req.body.oldPassword };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          password: req.body.newPassword
+        },
+      };
+      const result = await users.updateOne(filter, updateDoc, options);
+
+      console.log(
+        `${result.matchedCount} document(s) matched the filter, updated ${result.modifiedCount} document(s)`,
+      );
+
+      if (result.modifiedCount === 0) {
+        res.status(401).json({statusCode: 401, result: result})
+      }
+      res.status(200).json({statusCode: 200, result: result});
+    } catch (error) {
+      console.error('Error handling request:', error);
+      res.status(500).json({error: 'Internal server error'});
+    }
+  }
+
+  run().catch(console.dir);
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
